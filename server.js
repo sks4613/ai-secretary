@@ -101,7 +101,32 @@ app.post('/test-tts', resolveTenant, async (req, res) => {
         res.status(500).json({ error: 'TTS service error' });
     }
 });
-
+// Simple Telnyx webhook test
+app.post('/webhooks/telnyx/voice/simple', async (req, res) => {
+    try {
+        console.log('📞 SIMPLE Telnyx webhook received:', JSON.stringify(req.body, null, 2));
+        
+        const { data } = req.body;
+        const { event_type } = data || {};
+        
+        console.log(`📞 Event: ${event_type}`);
+        
+        if (event_type === 'call.initiated') {
+            return res.status(200).json({ "command": "answer" });
+        } else if (event_type === 'call.answered') {
+            return res.status(200).json({ 
+                "command": "speak",
+                "text": "Hello! Thank you for calling SCA Appliance Liquidations. This is a test of our AI system.",
+                "voice": "male"
+            });
+        }
+        
+        res.status(200).json({ status: 'ok' });
+    } catch (error) {
+        console.error('❌ Simple webhook error:', error);
+        res.status(200).json({ status: 'error' });
+    }
+});
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`SCA Appliance Liquidations AI Secretary Platform running on port ${PORT}`);
