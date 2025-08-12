@@ -1,13 +1,26 @@
 require('dotenv').config();
-const telnyx = require('telnyx');
 
 class TelnyxService {
     constructor() {
-        this.client = telnyx(process.env.TELNYX_API_KEY);
+        this.client = null;
+        this.initTelnyx();
+    }
+    
+    async initTelnyx() {
+        try {
+            const telnyxModule = await import('telnyx');
+            this.client = telnyxModule.default(process.env.TELNYX_API_KEY);
+        } catch (error) {
+            console.error('Failed to initialize Telnyx:', error);
+        }
     }
     
     async provisionNumber(areaCode = null) {
         try {
+            if (!this.client) {
+                await this.initTelnyx();
+            }
+            
             // Search for available numbers
             const searchParams = {
                 filter: {
@@ -54,6 +67,10 @@ class TelnyxService {
     
     async makeCall(to, from) {
         try {
+            if (!this.client) {
+                await this.initTelnyx();
+            }
+            
             const call = await this.client.calls.create({
                 to: to,
                 from: from
