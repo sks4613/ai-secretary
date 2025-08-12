@@ -13,11 +13,13 @@ class DatabaseInitializer {
         try {
             console.log('🔧 Initializing SCA Appliance Liquidations database...');
 
-            // Create organizations table
+            // DROP existing table to recreate with full schema
+            await this.db.query(`DROP TABLE IF EXISTS organizations CASCADE;`);
+
+           // Create organizations table
             await this.db.query(`
                 CREATE TABLE IF NOT EXISTS organizations (
                     id SERIAL PRIMARY KEY,
-                    uuid UUID DEFAULT gen_random_uuid() UNIQUE NOT NULL,
                     name VARCHAR(255) NOT NULL,
                     business_type VARCHAR(100) DEFAULT 'appliance_liquidation',
                     phone_number VARCHAR(20),
@@ -30,7 +32,7 @@ class DatabaseInitializer {
                     timezone VARCHAR(50) DEFAULT 'America/Indiana/Evansville',
                     business_hours JSONB DEFAULT '{"delivery_days":["wednesday","saturday"],"appointments":"by_appointment_with_30min_notice","location_note":"across from the solar panel field"}',
                     ai_personality TEXT DEFAULT 'Professional appliance liquidation specialist who helps customers get brand new appliances with full manufacturer warranties at 50% below retail prices',
-                    greeting_message TEXT DEFAULT 'SCA Appliance Liquidations. How can I help you today!',
+                    greeting_message TEXT DEFAULT 'Thank you for calling SCA Appliance Liquidations how may i help you today? ',
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                     is_active BOOLEAN DEFAULT true,
@@ -135,15 +137,25 @@ class DatabaseInitializer {
 
             console.log('✅ Database tables created successfully!');
 
-            // Insert SCA Appliance Liquidations as organization #1
+            console.log('✅ Database tables created successfully!');
+            
+            // DEBUG: Check what columns actually exist
+            const tableInfo = await this.db.query(`
+                SELECT column_name, data_type 
+                FROM information_schema.columns 
+                WHERE table_name = 'organizations' 
+                ORDER BY ordinal_position;
+            `);
+            console.log('🔍 Actual organizations table columns:', tableInfo.rows);
+
+            // Insert SCA Appliance Liquidations as organization #1 (simplified)
             const orgResult = await this.db.query(`
                 INSERT INTO organizations (
-                    name, business_type, phone_number, email, address, city, state, zip_code, 
-                    country, timezone, business_hours, ai_personality, greeting_message, subscription_plan
+                    name, business_type, email, address, city, state, zip_code, 
+                    country, timezone, ai_personality, greeting_message, subscription_plan
                 ) VALUES (
                     'SCA Appliance Liquidations',
                     'appliance_liquidation',
-                    '+15027685233',
                     'info@sca-appliances.com',
                     '1724 E Morgan Avenue (Corner of Morgan and Marie Avenue)',
                     'Evansville',
@@ -151,9 +163,8 @@ class DatabaseInitializer {
                     '47708',
                     'US',
                     'America/Indiana/Evansville',
-                    '{"delivery_days":["wednesday","saturday"],"appointments":"by_appointment_with_30min_notice","location_note":"across from the solar panel field"}',
                     'Professional appliance liquidation specialist who helps customers get brand new appliances with full manufacturer warranties at 50% below retail prices',
-                    'SCA Appliance Liquidations. How can I help you today?',
+                    'Hello! Thank you for calling SCA Appliance Liquidations. How can I help you find a brand new appliance with full warranty at 50% below retail price today?',
                     'premium'
                 )
                 ON CONFLICT DO NOTHING

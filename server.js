@@ -16,13 +16,8 @@ app.use(express.urlencoded({ extended: true }));
 // Voice webhook routes
 app.use('/webhooks/telnyx/voice', voiceRoutes);
 
-// Database with connection pooling
+// Database with connection pooling - FIXED: Use only DATABASE_URL
 const db = new Pool({
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    database: process.env.DB_NAME,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
     max: 20,
