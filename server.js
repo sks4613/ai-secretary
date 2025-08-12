@@ -88,7 +88,7 @@ app.post('/test-tts', resolveTenant, async (req, res) => {
     try {
         const elevenlabs = new ElevenLabsService();
         
-        const text = "Hello! Thank you for calling SCA Appliance Liquidations. How can I help you find a brand new appliance with full warranty at 50% below retail price today?";
+        const text = "Thank you for calling SCA Appliance Liquidations. How may I help you today?";
         const audioBuffer = await elevenlabs.generateSpeech(text, 'en');
         
         res.set({
@@ -101,32 +101,47 @@ app.post('/test-tts', resolveTenant, async (req, res) => {
         res.status(500).json({ error: 'TTS service error' });
     }
 });
-// Simple Telnyx webhook test
+
+// FIXED: Proper Telnyx Call Control webhook handler
 app.post('/webhooks/telnyx/voice/simple', async (req, res) => {
     try {
         console.log('📞 SIMPLE Telnyx webhook received:', JSON.stringify(req.body, null, 2));
         
         const { data } = req.body;
-        const { event_type } = data || {};
+        const { event_type, call_control_id } = data || {};
         
         console.log(`📞 Event: ${event_type}`);
         
         if (event_type === 'call.initiated') {
-            return res.status(200).json({ "command": "answer" });
+            console.log('📞 Call initiated, sending answer command');
+            return res.status(200).json({ 
+                "command": "answer",
+                "call_control_id": call_control_id
+            });
         } else if (event_type === 'call.answered') {
+            console.log('📞 Call answered, sending speak command');
             return res.status(200).json({ 
                 "command": "speak",
-                "text": "Hello! Thank you for calling SCA Appliance Liquidations. This is a test of our AI system.",
+                "call_control_id": call_control_id,
+                "text": "Hello! Thank you for calling SCA Appliance Liquidations. We sell brand new appliances with full warranty at 50% below retail price.  Please call back later or leave a message after the beep.",
                 "voice": "male"
+            });
+        } else if (event_type === 'call.speak.ended') {
+            console.log('📞 Speak ended, hanging up');
+            return res.status(200).json({
+                "command": "hangup",
+                "call_control_id": call_control_id
             });
         }
         
+        console.log(`📞 Unhandled event: ${event_type}`);
         res.status(200).json({ status: 'ok' });
     } catch (error) {
         console.error('❌ Simple webhook error:', error);
         res.status(200).json({ status: 'error' });
     }
 });
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`SCA Appliance Liquidations AI Secretary Platform running on port ${PORT}`);
