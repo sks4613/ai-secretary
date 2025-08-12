@@ -5,6 +5,7 @@ const { GroqService } = require('./services/groq');
 const { DeepgramService } = require('./services/deepgram');
 const { ElevenLabsService } = require('./services/elevenlabs');
 const { TelnyxService } = require('./services/telnyx');
+const { DatabaseInitializer } = require('./database-init');
 const voiceRoutes = require('./routes/voice');
 require('dotenv').config();
 
@@ -22,14 +23,33 @@ const db = new Pool({
     database: process.env.DB_NAME,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
     max: 20,
     idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 2000,
 });
 
+// Initialize database on startup
+async function initializeApp() {
+    try {
+        console.log('🔧 Initializing SCA Appliance Liquidations...');
+        const dbInit = new DatabaseInitializer();
+        await dbInit.initializeDatabase();
+        await dbInit.close();
+        console.log('✅ SCA Appliance Liquidations database ready!');
+    } catch (error) {
+        console.error('❌ Database initialization failed:', error);
+        // Continue anyway - might already be initialized
+    }
+}
+
+// Initialize database when server starts
+initializeApp();
+
 // Test route
 app.get('/', (req, res) => {
-    res.json({ message: 'SCA AI Secretary Platform is running!' });
+    res.json({ message: 'SCA Appliance Liquidations AI Secretary Platform is running!' });
 });
 
 // Test tenant route
@@ -47,7 +67,7 @@ app.post('/test-ai', resolveTenant, async (req, res) => {
         const groq = new GroqService();
         
         const messages = [
-            { role: "user", content: "Hi, I need help with my broken refrigerator" }
+            { role: "user", content: "Hi, I need help finding a new refrigerator" }
         ];
         
         const response = await groq.chat(messages, req.org, 'en');
@@ -68,7 +88,7 @@ app.post('/test-tts', resolveTenant, async (req, res) => {
     try {
         const elevenlabs = new ElevenLabsService();
         
-        const text = "Hello! Thank you for calling SCA. How can I help you today?";
+        const text = "Hello! Thank you for calling SCA Appliance Liquidations. How can I help you find a brand new appliance with full warranty at 50% below retail price today?";
         const audioBuffer = await elevenlabs.generateSpeech(text, 'en');
         
         res.set({
@@ -82,37 +102,9 @@ app.post('/test-tts', resolveTenant, async (req, res) => {
     }
 });
 
-// Provision phone number
-app.post('/provision-number', async (req, res) => {
-    try {
-        const { areaCode } = req.body;
-        const telnyx = new TelnyxService();
-        
-        console.log(`📞 Provisioning number for area code: ${areaCode || 'any'}`);
-        
-        const result = await telnyx.provisionNumber(areaCode);
-        
-        console.log(`✅ Number provisioned: ${result.phone_number}`);
-        
-        res.json({
-            success: true,
-            phone_number: result.phone_number,
-            telnyx_id: result.telnyx_id,
-            message: `SCA AI Secretary number ready: ${result.phone_number}`
-        });
-        
-    } catch (error) {
-        console.error('❌ Number provisioning error:', error);
-        res.status(500).json({ 
-            error: 'Failed to provision number',
-            details: error.message 
-        });
-    }
-});
-
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`SCA AI Secretary Platform running on port ${PORT}`);
+    console.log(`SCA Appliance Liquidations AI Secretary Platform running on port ${PORT}`);
 });
 
 module.exports = { db };
