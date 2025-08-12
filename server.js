@@ -142,4 +142,9 @@ app.listen(PORT, () => {
     console.log(`SCA Appliance Liquidations AI Secretary Platform running on port ${PORT}`);
 });
 
+app.all('/webhooks/*', (req, res) => {
+    console.log('🔍 WEBHOOK DEBUG - URL:', req.url, 'Method:', req.method, 'Body:', req.body);
+    res.status(200).json({ debug: 'webhook received' });
+});
+
 module.exports = { db };
