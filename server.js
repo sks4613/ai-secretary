@@ -127,13 +127,30 @@ app.post('/webhooks/telnyx/voice/inbound', async (req, res) => {
     }
 
     // v2 event names are snake_case (e.g., call_initiated, call_answered)
-    if (event_type === 'call_initiated') {
+if (event_type === 'call_initiated') {
   console.log('📞 Answering call via Telnyx v2 REST');
-  await axios.post(
-    `https://api.telnyx.com/v2/calls/${call_control_id}/actions/answer`,
-    {},
-    { headers: { Authorization: `Bearer ${process.env.TELNYX_API_KEY}` } }
-  );
+  try {
+    const { status, data } = await axios.post(
+      `https://api.telnyx.com/v2/calls/${call_control_id}/actions/answer`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.TELNYX_API_KEY}`,
+          'Content-Type': 'application/json',
+          Accept: 'application/json'
+        },
+        timeout: 5000
+      }
+    );
+    console.log('✅ Telnyx answer status:', status, JSON.stringify(data));
+  } catch (err) {
+    console.error(
+      '❌ Telnyx answer error:',
+      err.response?.status,
+      JSON.stringify(err.response?.data || {}),
+      '| message:', err.message
+    );
+  }
   return res.status(200).json({ status: 'ok' });
 }
 
@@ -161,7 +178,6 @@ app.post('/webhooks/telnyx/voice/inbound', async (req, res) => {
   );
   return res.status(200).json({ status: 'ok' });
 }
-
 
     console.log(`ℹ️ Unhandled event: ${event_type}`);
     return res.status(200).json({ status: 'ok' });
