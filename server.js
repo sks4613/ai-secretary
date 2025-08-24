@@ -1,5 +1,5 @@
  // server.js
-const express = require('express');
+const axios = require('axios'); const express = require('express');
 const { Pool } = require('pg');
 const { resolveTenant } = require('./middleware');
 const { GroqService } = require('./services/groq');
@@ -128,31 +128,40 @@ app.post('/webhooks/telnyx/voice/inbound', async (req, res) => {
 
     // v2 event names are snake_case (e.g., call_initiated, call_answered)
     if (event_type === 'call_initiated') {
-      console.log('📞 Answering call');
-      return res.status(200).json({
-        command: 'answer',
-        call_control_id,
-      });
-    }
+  console.log('📞 Answering call via Telnyx v2 REST');
+  await axios.post(
+    `https://api.telnyx.com/v2/calls/${call_control_id}/actions/answer`,
+    {},
+    { headers: { Authorization: `Bearer ${process.env.TELNYX_API_KEY}` } }
+  );
+  return res.status(200).json({ status: 'ok' });
+}
 
     if (event_type === 'call_answered') {
-      console.log('🗣️ Speaking greeting');
-      return res.status(200).json({
-        command: 'speak',
-        call_control_id,
-        text:
-          'Hello! Thank you for calling SCA Appliance Liquidations. We sell brand new appliances with full warranty at 50% below retail price. Please tell me how I can help.',
-        voice: 'male',
-      });
-    }
+  console.log('🗣️ Speaking greeting via Telnyx v2 REST');
+  await axios.post(
+    `https://api.telnyx.com/v2/calls/${call_control_id}/actions/speak`,
+    {
+      payload:
+        'SCA Appliance Liquidations. How can I help you?',
+      voice: 'male'
+    },
+    { headers: { Authorization: `Bearer ${process.env.TELNYX_API_KEY}` } }
+  );
+  return res.status(200).json({ status: 'ok' });
+}
+
 
     if (event_type === 'call_speak_ended') {
-      console.log('🛑 Hanging up after speak');
-      return res.status(200).json({
-        command: 'hangup',
-        call_control_id,
-      });
-    }
+  console.log('🛑 Hanging up via Telnyx v2 REST');
+  await axios.post(
+    `https://api.telnyx.com/v2/calls/${call_control_id}/actions/hangup`,
+    {},
+    { headers: { Authorization: `Bearer ${process.env.TELNYX_API_KEY}` } }
+  );
+  return res.status(200).json({ status: 'ok' });
+}
+
 
     console.log(`ℹ️ Unhandled event: ${event_type}`);
     return res.status(200).json({ status: 'ok' });
