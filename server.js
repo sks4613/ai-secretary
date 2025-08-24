@@ -14,7 +14,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Voice webhook routes
-// app.use('/webhooks/telnyx/voice', voiceRoutes);
+app.use('/webhooks/telnyx/voice', voiceRoutes);
 
 // Database with connection pooling - FIXED: Use only DATABASE_URL
 const db = new Pool({
@@ -115,47 +115,6 @@ app.get('/test-tts', async (req, res) => {
        res.status(500).json({ error: 'TTS service error' });
    }
 });
-
-// FIXED: Proper Telnyx Call Control webhook handler
-app.post('/webhooks/telnyx/voice/inbound', async (req, res) => {
-   try {
-       console.log('📞 SIMPLE Telnyx webhook received:', JSON.stringify(req.body, null, 2));
-       
-       const { data } = req.body;
-       const { event_type, call_control_id } = data || {};
-       
-       console.log(`📞 Event: ${event_type}`);
-       
-       if (event_type === 'call.initiated') {
-           console.log('📞 Call initiated, sending answer command');
-           return res.status(200).json({ 
-               "command": "answer",
-               "call_control_id": call_control_id
-           });
-       } else if (event_type === 'call.answered') {
-           console.log('📞 Call answered, sending speak command');
-           return res.status(200).json({ 
-               "command": "speak",
-               "call_control_id": call_control_id,
-               "text": "Hello! Thank you for calling SCA Appliance Liquidations. We sell brand new appliances with full warranty at 50% below retail price.  Please call back later or leave a message after the beep.",
-               "voice": "male"
-           });
-       } else if (event_type === 'call.speak.ended') {
-           console.log('📞 Speak ended, hanging up');
-           return res.status(200).json({
-               "command": "hangup",
-               "call_control_id": call_control_id
-           });
-       }
-       
-       console.log(`📞 Unhandled event: ${event_type}`);
-       res.status(200).json({ status: 'ok' });
-   } catch (error) {
-       console.error('❌ Simple webhook error:', error);
-       res.status(200).json({ status: 'error' });
-   }
-});
-
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
    console.log(`SCA Appliance Liquidations AI Secretary Platform running on port ${PORT}`);
