@@ -9,6 +9,12 @@ const { DatabaseInitializer } = require('./database-init');
 // If you later want to use the router-based flow, uncomment the next line
 // const voiceRoutes = require('./routes/voice');
 require('dotenv').config();
+process.on('unhandledRejection', (reason, p) => {
+  console.error('🧨 UNHANDLED REJECTION:', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('🧨 UNCAUGHT EXCEPTION:', err);
+});
 
 const app = express();
 app.use(express.json());
