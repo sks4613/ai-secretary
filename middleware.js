@@ -22,10 +22,7 @@ console.log('DB Config:', {
 
 const resolveTenant = async (req, res, next) => {
     try {
-        const calledNumber =
-  (req.body && (req.body.Called || req.body.To || req.body.to)) ||
-  (req.body?.data?.payload?.to || req.body?.data?.payload?.to_number || req.body?.data?.payload?.to_phone_number);
-
+        const calledNumber = req.body.Called || req.body.To || req.body.to;
         
         if (!calledNumber) {
             return res.status(400).json({ error: 'Missing called number' });

@@ -1,4 +1,4 @@
-const express = require('express');
+ const express = require('express');
 const router = express.Router();
 const { resolveTenant } = require('../middleware');
 const { GroqService } = require('../services/groq');
@@ -10,8 +10,6 @@ const conversations = new Map();
 
 // Handle incoming voice calls - COMPLETE AI CONVERSATION
 router.post('/inbound', resolveTenant, async (req, res) => {
-    console.log('✅ /webhooks/telnyx/voice/inbound HIT');
-
     try {
         const callSid = req.body.call_control_id || req.body.CallSid || 'test-call';
         const fromNumber = req.body.From || req.body.from;
